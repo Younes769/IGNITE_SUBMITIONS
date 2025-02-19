@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { Dialog } from "@headlessui/react";
 import toast from "react-hot-toast";
@@ -9,12 +9,16 @@ import {
   ArrowTopRightOnSquareIcon,
   DocumentArrowUpIcon,
   LinkIcon,
+  ClockIcon,
 } from "@heroicons/react/24/outline";
 
 export default function SubmissionForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [presentationType, setPresentationType] = useState("file"); // "file" or "url"
+  const [deadline, setDeadline] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isExpired, setIsExpired] = useState(false);
 
   const {
     register,
@@ -23,6 +27,35 @@ export default function SubmissionForm() {
     reset,
     watch,
   } = useForm();
+
+  useEffect(() => {
+    const fetchDeadline = async () => {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("settings")
+        .select("value")
+        .eq("key", "submission_deadline")
+        .single();
+
+      if (!error && data) {
+        const deadlineDate = new Date(data.value);
+        setDeadline(deadlineDate);
+        setIsExpired(new Date() > deadlineDate);
+      }
+      setIsLoading(false);
+    };
+
+    fetchDeadline();
+
+    // Set up an interval to check deadline every minute
+    const interval = setInterval(() => {
+      if (deadline) {
+        setIsExpired(new Date() > deadline);
+      }
+    }, 60000);
+
+    return () => clearInterval(interval);
+  }, [deadline]);
 
   const uploadFile = async (file, teamName, fileType) => {
     const fileExt = file.name.split(".").pop();
@@ -82,6 +115,30 @@ export default function SubmissionForm() {
       setIsSubmitting(false);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="glass rounded-xl p-8 text-center">
+        <p className="text-white">Loading...</p>
+      </div>
+    );
+  }
+
+  if (isExpired) {
+    return (
+      <div className="glass rounded-xl p-8 text-center">
+        <div className="flex flex-col items-center space-y-4">
+          <ClockIcon className="w-16 h-16 text-red-500" />
+          <h2 className="text-2xl font-bold text-red-500">
+            Submissions are closed
+          </h2>
+          <p className="text-gray-400">
+            The submission deadline ({deadline?.toLocaleString()}) has passed.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="glass rounded-xl overflow-hidden animate-fade-in">
