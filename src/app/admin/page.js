@@ -1,0 +1,258 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase";
+import { format } from "date-fns";
+import DeadlineManager from "@/components/DeadlineManager";
+import {
+  ArrowTopRightOnSquareIcon,
+  DocumentArrowDownIcon,
+  LinkIcon,
+} from "@heroicons/react/24/outline";
+
+export default function AdminDashboard() {
+  const router = useRouter();
+  const [session, setSession] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [submissions, setSubmissions] = useState([]);
+  const [deadline, setDeadline] = useState(null);
+
+  useEffect(() => {
+    const checkSession = async () => {
+      const supabase = createClient();
+      try {
+        const {
+          data: { session },
+          error,
+        } = await supabase.auth.getSession();
+        console.log("Dashboard session check:", { session, error });
+
+        if (error || !session?.user) {
+          router.replace("/admin/login");
+          return;
+        }
+
+        setSession(session);
+        await fetchData();
+      } catch (error) {
+        console.error("Session error:", error);
+        router.replace("/admin/login");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    const fetchData = async () => {
+      const supabase = createClient();
+      try {
+        // Fetch submissions
+        const { data: submissionsData, error: submissionsError } =
+          await supabase
+            .from("submissions")
+            .select("*")
+            .order("created_at", { ascending: false });
+
+        if (submissionsError) throw submissionsError;
+        setSubmissions(submissionsData || []);
+
+        // Fetch deadline
+        const { data: deadlineData, error: deadlineError } = await supabase
+          .from("settings")
+          .select("value")
+          .eq("key", "submission_deadline")
+          .single();
+
+        if (deadlineError && deadlineError.code !== "PGRST116")
+          throw deadlineError;
+        setDeadline(deadlineData?.value ? new Date(deadlineData.value) : null);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      }
+    };
+
+    checkSession();
+
+    const supabase = createClient();
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session?.user) {
+        router.replace("/admin/login");
+      } else {
+        setSession(session);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [router]);
+
+  const handleSignOut = async () => {
+    const supabase = createClient();
+    try {
+      await supabase.auth.signOut();
+      router.replace("/admin/login");
+    } catch (error) {
+      console.error("Sign out error:", error);
+    }
+  };
+
+  const handleDownload = async (filePath) => {
+    const supabase = createClient();
+    try {
+      const { data, error } = await supabase.storage
+        .from("submissions")
+        .createSignedUrl(filePath, 60); // URL valid for 60 seconds
+
+      if (error) throw error;
+      window.open(data.signedUrl, "_blank");
+    } catch (error) {
+      console.error("Download error:", error);
+      alert("Error downloading file. Please try again.");
+    }
+  };
+
+  const handleDeadlineUpdate = (newDeadline) => {
+    setDeadline(newDeadline);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-white text-xl">Loading...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-black text-white p-4 sm:p-6 lg:p-8">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 space-y-4 sm:space-y-0">
+          <div>
+            <h1 className="text-3xl font-bold text-primary">Admin Dashboard</h1>
+            <p className="text-gray-400 mt-1">
+              Logged in as: {session?.user?.email}
+            </p>
+          </div>
+          <div className="flex items-center space-x-4">
+            <DeadlineManager
+              currentDeadline={deadline}
+              onUpdate={handleDeadlineUpdate}
+            />
+            <button
+              onClick={handleSignOut}
+              className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-md transition-colors"
+            >
+              Sign Out
+            </button>
+          </div>
+        </div>
+
+        {/* Submissions Table */}
+        <div className="bg-gray-900 rounded-xl overflow-hidden shadow-xl">
+          <div className="p-4 sm:p-6 border-b border-white/10">
+            <h2 className="text-xl font-semibold">Project Submissions</h2>
+            <p className="text-gray-400 mt-1">
+              Total submissions: {submissions.length}
+            </p>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-black/20">
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-300">
+                    Team Name
+                  </th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-300">
+                    Figma URL
+                  </th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-300">
+                    BMC File
+                  </th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-300">
+                    Presentation
+                  </th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-300">
+                    Submitted At
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                {submissions.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan="5"
+                      className="px-6 py-8 text-center text-gray-400"
+                    >
+                      No submissions yet
+                    </td>
+                  </tr>
+                ) : (
+                  submissions.map((submission) => (
+                    <tr key={submission.id} className="hover:bg-white/5">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="font-medium">
+                          {submission.team_name}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <a
+                          href={submission.figma_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary hover:text-primary-light inline-flex items-center"
+                        >
+                          View Figma
+                          <ArrowTopRightOnSquareIcon className="w-4 h-4 ml-1" />
+                        </a>
+                      </td>
+                      <td className="px-6 py-4">
+                        <button
+                          onClick={() => handleDownload(submission.bmc_file)}
+                          className="text-primary hover:text-primary-light inline-flex items-center"
+                        >
+                          Download BMC
+                          <DocumentArrowDownIcon className="w-4 h-4 ml-1" />
+                        </button>
+                      </td>
+                      <td className="px-6 py-4">
+                        {submission.presentation_file ? (
+                          <button
+                            onClick={() =>
+                              handleDownload(submission.presentation_file)
+                            }
+                            className="text-primary hover:text-primary-light inline-flex items-center"
+                          >
+                            Download Presentation
+                            <DocumentArrowDownIcon className="w-4 h-4 ml-1" />
+                          </button>
+                        ) : submission.presentation_url ? (
+                          <a
+                            href={submission.presentation_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary hover:text-primary-light inline-flex items-center"
+                          >
+                            View Presentation
+                            <ArrowTopRightOnSquareIcon className="w-4 h-4 ml-1" />
+                          </a>
+                        ) : (
+                          <span className="text-gray-500">Not provided</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-gray-400">
+                        {format(new Date(submission.created_at), "PPP 'at' pp")}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -1,36 +1,114 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Project Submission Portal
 
-## Getting Started
+A modern web application for teams to submit their project materials, built with Next.js, Tailwind CSS, and Supabase.
 
-First, run the development server:
+## Features
+
+- Modern, responsive UI with dark theme
+- Secure file uploads for BMC and presentations
+- Figma URL submission
+- Admin dashboard for HR team
+- Countdown timer for submission deadline
+- Authentication for admin access
+- File download capabilities for administrators
+
+## Prerequisites
+
+- Node.js 16.x or later
+- Supabase account and project
+- npm or yarn package manager
+
+## Setup Instructions
+
+1. Clone the repository
+2. Install dependencies:
+
+```bash
+npm install
+```
+
+3. Create a Supabase project at https://supabase.com
+
+4. Copy the `.env.local.example` to `.env.local` and update with your Supabase credentials:
+
+```bash
+NEXT_PUBLIC_SUPABASE_URL=your-project-url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+```
+
+5. Run the database migrations:
+
+   - Copy the contents of `supabase/migrations/initial_schema.sql`
+   - Run it in your Supabase project's SQL editor
+
+6. Create an admin user:
+
+   - Go to Authentication > Users in your Supabase dashboard
+   - Invite a new user with the HR team's email
+   - The user will receive an email to set their password
+
+7. Start the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Development
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+The application will be available at `http://localhost:3000`
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Main submission form: `/`
+- Admin login: `/admin/login`
+- Admin dashboard: `/admin`
 
-## Learn More
+## Deployment
 
-To learn more about Next.js, take a look at the following resources:
+1. Push your code to your preferred Git provider (GitHub, GitLab, etc.)
+2. Deploy to Vercel:
+   - Connect your Git repository
+   - Add environment variables
+   - Deploy
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## File Structure
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+├── src/
+│   ├── app/
+│   │   ├── page.js              # Main submission form
+│   │   ├── admin/
+│   │   │   ├── page.js          # Admin dashboard
+│   │   │   └── login/
+│   │   │       └── page.js      # Admin login
+│   │   └── layout.js
+│   ├── components/
+│   │   └── CountdownTimer.js
+│   ├── lib/
+│   │   └── supabase.js
+│   └── middleware.js
+├── public/
+│   ├── logo_nit_.png
+│   └── white_logo
+├── supabase/
+│   └── migrations/
+│       └── initial_schema.sql
+└── .env.local
+```
 
-## Deploy on Vercel
+## Security
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- File uploads are restricted to specific file types
+- Admin routes are protected by authentication
+- Row Level Security (RLS) is enabled in Supabase
+- Environment variables are used for sensitive data
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
+
+## License
+
+This project is licensed under the MIT License.
