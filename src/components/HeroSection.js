@@ -11,8 +11,8 @@ export default function HeroSection() {
   return (
     <div className="min-h-screen flex flex-col relative overflow-hidden">
       {/* Event Logo - Top */}
-      <div className="absolute top-0 sm:top-2 left-1/2 -translate-x-1/2 z-50">
-        <div className="relative w-28 h-28 sm:w-36 sm:h-36">
+      <div className="absolute top-8 sm:top-12 left-1/2 -translate-x-1/2 z-50">
+        <div className="relative w-32 h-32 sm:w-40 sm:h-40">
           <div className="absolute inset-0 bg-gradient-to-r from-orange-500/20 to-yellow-500/20 rounded-full blur-2xl -z-10" />
           <Image
             src="/IGNITE_LOGO.svg"
@@ -25,7 +25,7 @@ export default function HeroSection() {
       </div>
 
       {/* University and Club logos */}
-      <div className="absolute top-32 sm:top-40 left-0 right-0 z-40">
+      <div className="absolute top-36 sm:top-44 left-0 right-0 z-40">
         <div className="max-w-4xl mx-auto px-4">
           <div className="flex items-center justify-center space-x-8 sm:space-x-12">
             <div className="relative w-28 h-28 sm:w-36 sm:h-36">
@@ -57,7 +57,7 @@ export default function HeroSection() {
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col items-center justify-center">
-        <div className="text-center animate-fade-in relative z-10 mt-40 sm:mt-56">
+        <div className="text-center animate-fade-in relative z-10 mt-52 sm:mt-64">
           {/* Timer */}
           <div className="w-full overflow-x-auto">
             <CountdownTimer />
