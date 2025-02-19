@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS profiles (
 -- Create submissions table
 CREATE TABLE IF NOT EXISTS submissions (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID REFERENCES auth.users NOT NULL,
     team_name TEXT NOT NULL,
     figma_url TEXT NOT NULL,
     bmc_file TEXT NOT NULL,
@@ -56,7 +57,20 @@ CREATE POLICY "Enable read access for all users" ON submissions
     FOR SELECT USING (true);
 
 CREATE POLICY "Enable insert access for authenticated users" ON submissions
-    FOR INSERT WITH CHECK (true);
+    FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Enable delete for users based on user_id" ON submissions
+    FOR DELETE USING (auth.uid() = user_id);
+
+-- Add delete policy for admin users
+CREATE POLICY "Enable delete access for admin users" ON submissions
+    FOR DELETE USING (
+        EXISTS (
+            SELECT 1 FROM profiles
+            WHERE profiles.id = auth.uid()
+            AND profiles.role = 'admin'
+        )
+    );
 
 -- Create policies for settings
 CREATE POLICY "Enable read access for all users" ON settings

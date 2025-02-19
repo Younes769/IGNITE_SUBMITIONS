@@ -5,11 +5,14 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import { format } from "date-fns";
 import DeadlineManager from "@/components/DeadlineManager";
+import { Dialog } from "@headlessui/react";
 import {
   ArrowTopRightOnSquareIcon,
   DocumentArrowDownIcon,
   LinkIcon,
+  TrashIcon,
 } from "@heroicons/react/24/outline";
+import toast from "react-hot-toast";
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -17,6 +20,9 @@ export default function AdminDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [submissions, setSubmissions] = useState([]);
   const [deadline, setDeadline] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [submissionToDelete, setSubmissionToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     const checkSession = async () => {
@@ -116,6 +122,86 @@ export default function AdminDashboard() {
     setDeadline(newDeadline);
   };
 
+  const handleDeleteClick = (submission) => {
+    setSubmissionToDelete(submission);
+    setShowDeleteModal(true);
+  };
+
+  const handleDelete = async () => {
+    if (!submissionToDelete) return;
+
+    setIsDeleting(true);
+    const supabase = createClient();
+
+    try {
+      console.log("Starting deletion for submission:", submissionToDelete.id);
+
+      // Delete files from storage if they exist
+      if (submissionToDelete.bmc_file) {
+        console.log("Deleting BMC file:", submissionToDelete.bmc_file);
+        const { error: bmcError } = await supabase.storage
+          .from("submissions")
+          .remove([submissionToDelete.bmc_file]);
+
+        if (bmcError) {
+          console.error("Error deleting BMC file:", bmcError);
+          throw bmcError;
+        }
+      }
+
+      if (submissionToDelete.presentation_file) {
+        console.log(
+          "Deleting presentation file:",
+          submissionToDelete.presentation_file
+        );
+        const { error: presentationError } = await supabase.storage
+          .from("submissions")
+          .remove([submissionToDelete.presentation_file]);
+
+        if (presentationError) {
+          console.error("Error deleting presentation file:", presentationError);
+          throw presentationError;
+        }
+      }
+
+      // Delete submission from database
+      console.log("Deleting submission from database:", submissionToDelete.id);
+      const { error: deleteError } = await supabase
+        .from("submissions")
+        .delete()
+        .eq("id", submissionToDelete.id);
+
+      if (deleteError) {
+        console.error("Error deleting submission:", deleteError);
+        throw deleteError;
+      }
+
+      // Fetch updated submissions list
+      const { data: updatedSubmissions, error: fetchError } = await supabase
+        .from("submissions")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (fetchError) {
+        console.error("Error fetching updated submissions:", fetchError);
+        throw fetchError;
+      }
+
+      // Update local state with fresh data
+      setSubmissions(updatedSubmissions);
+      toast.success("Submission deleted successfully");
+      setShowDeleteModal(false);
+    } catch (error) {
+      console.error("Delete error:", error);
+      toast.error(
+        error.message || "Error deleting submission. Please try again."
+      );
+    } finally {
+      setIsDeleting(false);
+      setSubmissionToDelete(null);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
@@ -177,13 +263,16 @@ export default function AdminDashboard() {
                   <th className="px-6 py-3 text-left text-sm font-semibold text-gray-300">
                     Submitted At
                   </th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-300">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
                 {submissions.length === 0 ? (
                   <tr>
                     <td
-                      colSpan="5"
+                      colSpan="6"
                       className="px-6 py-8 text-center text-gray-400"
                     >
                       No submissions yet
@@ -245,6 +334,14 @@ export default function AdminDashboard() {
                       <td className="px-6 py-4 whitespace-nowrap text-gray-400">
                         {format(new Date(submission.created_at), "PPP 'at' pp")}
                       </td>
+                      <td className="px-6 py-4">
+                        <button
+                          onClick={() => handleDeleteClick(submission)}
+                          className="text-red-500 hover:text-red-400 inline-flex items-center"
+                        >
+                          <TrashIcon className="w-5 h-5" />
+                        </button>
+                      </td>
                     </tr>
                   ))
                 )}
@@ -253,6 +350,45 @@ export default function AdminDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <Dialog
+        open={showDeleteModal}
+        onClose={() => !isDeleting && setShowDeleteModal(false)}
+        className="relative z-50"
+      >
+        <div className="fixed inset-0 bg-black/70" aria-hidden="true" />
+        <div className="fixed inset-0 flex items-center justify-center p-4">
+          <Dialog.Panel className="glass-darker rounded-lg p-6 max-w-sm w-full">
+            <Dialog.Title className="text-xl font-bold text-red-500 mb-4">
+              Delete Submission
+            </Dialog.Title>
+            <p className="text-gray-300 mb-6">
+              Are you sure you want to delete the submission from{" "}
+              <span className="font-semibold text-white">
+                {submissionToDelete?.team_name}
+              </span>
+              ? This action cannot be undone.
+            </p>
+            <div className="flex space-x-4">
+              <button
+                onClick={() => !isDeleting && setShowDeleteModal(false)}
+                disabled={isDeleting}
+                className="btn-secondary"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors disabled:opacity-50"
+              >
+                {isDeleting ? "Deleting..." : "Delete"}
+              </button>
+            </div>
+          </Dialog.Panel>
+        </div>
+      </Dialog>
     </div>
   );
 }
