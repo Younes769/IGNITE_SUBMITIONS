@@ -6,8 +6,8 @@
 /* Custom Styles */
 @layer base {
   :root {
-    --primary: 255 107 0;
-    --primary-dark: 204 85 0;
+    --primary: #ff4c8c;
+    --primary-dark: #cc3d70;
     --primary-light: 255 133 51;
     --background: 26 26 26;
     --background-dark: 13 13 13;
@@ -16,17 +16,11 @@
 
   html {
     @apply h-full antialiased scroll-smooth;
-    background: rgb(var(--background-dark));
   }
 
   body {
     @apply h-full text-white overflow-x-hidden font-sans;
-    background: linear-gradient(
-      to bottom,
-      rgb(var(--background-dark)),
-      rgb(var(--background)),
-      rgb(var(--background-light))
-    );
+    min-height: 100vh;
   }
 
   ::-webkit-scrollbar {
@@ -44,122 +38,89 @@
 
 @layer components {
   .form-input {
-    @apply w-full px-4 py-3 
-           bg-black/40 border border-white/10 
-           rounded-lg outline-none 
-           transition-all duration-300
-           focus:border-primary/50 focus:ring-2 focus:ring-primary/20
-           placeholder:text-gray-500;
+    @apply w-full px-4 py-2 rounded-md bg-black border border-gray-700 focus:border-primary focus:ring-1 focus:ring-primary text-white;
   }
 
   .form-file {
-    @apply w-full px-4 py-3
-           bg-black/40 border border-white/10 rounded-lg
-           text-gray-400 cursor-pointer
-           file:mr-4 file:py-2 file:px-4 
-           file:rounded-lg file:border-0 
-           file:text-sm file:font-semibold
-           file:bg-primary/10 file:text-primary
-           file:cursor-pointer
-           hover:file:bg-primary/20
-           transition-all duration-300;
+    @apply block w-full text-sm text-gray-400
+      file:mr-4 file:py-2 file:px-4
+      file:rounded-md file:border-0
+      file:text-sm file:font-medium
+      file:bg-primary file:text-white
+      hover:file:bg-primary-dark
+      file:cursor-pointer cursor-pointer;
   }
 
   .glass {
-    @apply bg-black/40 backdrop-blur-md 
-           border border-white/10 
-           shadow-xl shadow-black/10
-           transition-all duration-300;
+    @apply backdrop-blur-md bg-white/5 border border-white/10 relative z-10;
   }
 
   .glass-darker {
-    @apply bg-black/60 backdrop-blur-md 
-           border border-white/10 
-           shadow-xl shadow-black/20
-           transition-all duration-300;
+    @apply backdrop-blur-md bg-black/70 border border-white/10 relative z-10;
   }
 
   .form-section {
-    @apply p-8 space-y-6 divide-y divide-white/10;
+    @apply p-6 space-y-4 relative z-10;
   }
 
   .form-section-title {
-    @apply text-2xl font-bold text-white 
-           flex items-center gap-4 mb-6;
+    @apply text-lg font-semibold flex items-center space-x-3 text-primary mb-4;
   }
 
   .form-section-number {
-    @apply w-10 h-10 rounded-xl 
-           bg-primary/10 text-primary
-           flex items-center justify-center 
-           font-bold text-lg
-           transition-all duration-300
-           hover:bg-primary/20;
+    @apply w-6 h-6 rounded-full bg-primary text-white text-sm flex items-center justify-center;
   }
 
   .input-label {
-    @apply block text-sm font-semibold text-gray-300 mb-2
-           transition-all duration-300;
+    @apply block text-sm font-medium text-gray-300 mb-2;
   }
 
   .error-message {
-    @apply mt-2 text-sm text-red-500 font-medium
-           flex items-center gap-1;
+    @apply text-red-500 text-sm mt-1;
   }
 
   .btn-primary {
-    @apply inline-flex items-center justify-center
-           px-6 py-3 rounded-lg
-           bg-primary hover:bg-primary-dark
-           text-white font-semibold 
-           transition-all duration-300
-           disabled:opacity-50 disabled:cursor-not-allowed
-           focus:outline-none focus:ring-2 
-           focus:ring-primary/50
-           transform hover:scale-[1.02] active:scale-[0.98]
-           shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30;
+    @apply w-full py-3 px-4 bg-primary hover:bg-primary-dark text-white font-medium rounded-md transition-colors disabled:opacity-50 relative z-10;
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center
-           px-6 py-3 rounded-lg
-           bg-white/5 border border-white/10 
-           hover:bg-white/10 
-           text-white font-semibold 
-           transition-all duration-300
-           disabled:opacity-50 disabled:cursor-not-allowed
-           focus:outline-none focus:ring-2 
-           focus:ring-white/20
-           transform hover:scale-[1.02] active:scale-[0.98];
+    @apply px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-md transition-colors relative z-10;
   }
 }
 
 @layer utilities {
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r
-           from-primary via-primary-light to-primary
-           animate-gradient bg-[length:200%_auto];
+    @apply text-transparent bg-clip-text bg-gradient-to-r from-primary to-blue-500;
   }
 
-  .animate-gradient {
-    animation: gradient 8s linear infinite;
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-out;
   }
 
-  @keyframes gradient {
-    0% {
-      background-position: 0% center;
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
     }
-    100% {
-      background-position: -200% center;
+    to {
+      opacity: 1;
+      transform: translateY(0);
     }
   }
 
-  .bg-gradient-overlay {
-    background: linear-gradient(
-      to bottom,
-      rgba(0, 0, 0, 0.8),
-      rgba(0, 0, 0, 0.5),
-      rgba(0, 0, 0, 0.8)
+  .background-gradient {
+    background: radial-gradient(
+      circle at center,
+      rgba(255, 76, 140, 0.15) 0%,
+      rgba(0, 0, 0, 0) 70%
     );
+  }
+
+  canvas {
+    filter: blur(0.5px);
+  }
+
+  .content-layer {
+    @apply relative z-20;
   }
 }

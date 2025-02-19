@@ -1,12 +1,11 @@
 "use client";
 
 import { Toaster } from "react-hot-toast";
-import Background from "@/components/Background";
 
-export default function Providers() {
+export default function Providers({ children }) {
   return (
     <>
-      <Background />
+      {children}
       <Toaster
         position="top-right"
         toastOptions={{
