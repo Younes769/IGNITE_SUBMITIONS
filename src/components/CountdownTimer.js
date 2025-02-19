@@ -1,20 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase";
 
-function TimeUnit({ value, label }) {
+function TimeUnit({ value }) {
   return (
-    <div className="flex flex-col items-center mx-2 sm:mx-4">
-      <div className="glass text-4xl sm:text-6xl lg:text-7xl font-black font-mono w-24 sm:w-32 lg:w-36 h-24 sm:h-32 lg:h-36 flex items-center justify-center rounded-xl mb-2 group hover:bg-white/10 hover:scale-105 transition-all duration-300 border border-white/10 bg-black/30">
-        <span className="bg-gradient-to-b from-white to-gray-300 bg-clip-text text-transparent group-hover:from-primary group-hover:to-primary-dark transition-all duration-300">
-          {value.toString().padStart(2, "0")}
-        </span>
-      </div>
-      <div className="text-gray-400 text-sm sm:text-base font-bold uppercase tracking-widest">
-        {label}
-      </div>
-    </div>
+    <span className="text-6xl sm:text-8xl lg:text-9xl font-black text-white">
+      {value.toString().padStart(2, "0")}
+    </span>
   );
 }
 
@@ -30,6 +23,8 @@ export default function CountdownTimer() {
   const [isExpired, setIsExpired] = useState(false);
 
   useEffect(() => {
+    const supabase = createClient();
+
     const fetchDeadline = async () => {
       try {
         const { data, error } = await supabase
@@ -40,15 +35,42 @@ export default function CountdownTimer() {
 
         if (error) throw error;
         if (data?.value) {
-          setDeadline(new Date(data.value));
+          const newDeadline = new Date(data.value);
+          setDeadline(newDeadline);
+          setIsExpired(new Date() >= newDeadline);
         }
       } catch (error) {
         console.error("Error fetching deadline:", error);
-        // Keep using the default deadline if there's an error
       }
     };
 
+    // Initial fetch
     fetchDeadline();
+
+    // Subscribe to changes
+    const channel = supabase
+      .channel("settings_changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "settings",
+          filter: "key=eq.submission_deadline",
+        },
+        (payload) => {
+          if (payload.new?.value) {
+            const newDeadline = new Date(payload.new.value);
+            setDeadline(newDeadline);
+            setIsExpired(new Date() >= newDeadline);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   useEffect(() => {
@@ -80,8 +102,8 @@ export default function CountdownTimer() {
   if (isExpired) {
     return (
       <div className="text-center">
-        <div className="glass-darker text-4xl sm:text-5xl font-black text-red-500 px-8 py-6 rounded-xl animate-pulse border border-red-500/30 bg-black/30">
-          Submission Closed
+        <div className="text-6xl sm:text-8xl lg:text-9xl font-black text-red-500 animate-pulse">
+          00:00:00
         </div>
       </div>
     );
@@ -89,16 +111,16 @@ export default function CountdownTimer() {
 
   return (
     <div className="text-center">
-      <div className="flex justify-center items-center gap-2 sm:gap-3">
-        <TimeUnit value={timeUnits.hours} label="Hours" />
-        <div className="text-4xl sm:text-6xl font-mono text-primary/80 font-black animate-pulse mt-[-1rem]">
+      <div className="flex items-baseline justify-center">
+        <TimeUnit value={timeUnits.hours} />
+        <span className="text-5xl sm:text-7xl lg:text-8xl font-black text-orange-500/80 mx-2 sm:mx-4 animate-pulse">
           :
-        </div>
-        <TimeUnit value={timeUnits.minutes} label="Minutes" />
-        <div className="text-4xl sm:text-6xl font-mono text-primary/80 font-black animate-pulse mt-[-1rem]">
+        </span>
+        <TimeUnit value={timeUnits.minutes} />
+        <span className="text-5xl sm:text-7xl lg:text-8xl font-black text-orange-500/80 mx-2 sm:mx-4 animate-pulse">
           :
-        </div>
-        <TimeUnit value={timeUnits.seconds} label="Seconds" />
+        </span>
+        <TimeUnit value={timeUnits.seconds} />
       </div>
     </div>
   );
