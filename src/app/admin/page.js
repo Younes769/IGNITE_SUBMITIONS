@@ -111,10 +111,24 @@ export default function AdminDashboard() {
         .createSignedUrl(filePath, 60); // URL valid for 60 seconds
 
       if (error) throw error;
-      window.open(data.signedUrl, "_blank");
+
+      // Create a temporary anchor element
+      const link = document.createElement("a");
+      link.href = data.signedUrl;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+
+      // Extract filename from path
+      const fileName = filePath.split("/").pop();
+      link.download = fileName;
+
+      // Append to body, click, and remove
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     } catch (error) {
       console.error("Download error:", error);
-      alert("Error downloading file. Please try again.");
+      toast.error("Error downloading file. Please try again.");
     }
   };
 
