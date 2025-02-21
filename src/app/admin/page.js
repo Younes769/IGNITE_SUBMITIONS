@@ -163,6 +163,21 @@ export default function AdminDashboard() {
         }
       }
 
+      if (submissionToDelete.technical_file) {
+        console.log(
+          "Deleting technical file:",
+          submissionToDelete.technical_file
+        );
+        const { error: technicalError } = await supabase.storage
+          .from("submissions")
+          .remove([submissionToDelete.technical_file]);
+
+        if (technicalError) {
+          console.error("Error deleting technical file:", technicalError);
+          throw technicalError;
+        }
+      }
+
       if (submissionToDelete.presentation_file) {
         console.log(
           "Deleting presentation file:",
@@ -272,6 +287,12 @@ export default function AdminDashboard() {
                     BMC File
                   </th>
                   <th className="px-6 py-3 text-left text-sm font-semibold text-gray-300">
+                    Technical Doc
+                  </th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-300">
+                    Additional Files
+                  </th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-300">
                     Presentation
                   </th>
                   <th className="px-6 py-3 text-left text-sm font-semibold text-gray-300">
@@ -286,7 +307,7 @@ export default function AdminDashboard() {
                 {submissions.length === 0 ? (
                   <tr>
                     <td
-                      colSpan="6"
+                      colSpan="7"
                       className="px-6 py-8 text-center text-gray-400"
                     >
                       No submissions yet
@@ -319,6 +340,32 @@ export default function AdminDashboard() {
                           Download BMC
                           <DocumentArrowDownIcon className="w-4 h-4 ml-1" />
                         </button>
+                      </td>
+                      <td className="px-6 py-4">
+                        <button
+                          onClick={() =>
+                            handleDownload(submission.technical_file)
+                          }
+                          className="text-primary hover:text-primary-light inline-flex items-center"
+                        >
+                          Download PDF
+                          <DocumentArrowDownIcon className="w-4 h-4 ml-1" />
+                        </button>
+                      </td>
+                      <td className="px-6 py-4">
+                        {submission.drive_url ? (
+                          <a
+                            href={submission.drive_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary hover:text-primary-light inline-flex items-center"
+                          >
+                            View Drive
+                            <ArrowTopRightOnSquareIcon className="w-4 h-4 ml-1" />
+                          </a>
+                        ) : (
+                          <span className="text-gray-500">Not provided</span>
+                        )}
                       </td>
                       <td className="px-6 py-4">
                         {submission.presentation_file ? (

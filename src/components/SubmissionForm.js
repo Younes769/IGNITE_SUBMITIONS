@@ -81,6 +81,12 @@ export default function SubmissionForm() {
         "bmc"
       );
 
+      const technicalFilePath = await uploadFile(
+        data.technicalFile[0],
+        data.teamName,
+        "technical"
+      );
+
       let presentationFile = null;
       let presentationUrl = null;
 
@@ -99,8 +105,10 @@ export default function SubmissionForm() {
         team_name: data.teamName,
         figma_url: data.figmaUrl,
         bmc_file: bmcFilePath,
+        technical_file: technicalFilePath,
         presentation_file: presentationFile,
         presentation_url: presentationUrl,
+        drive_url: data.driveUrl || null,
       });
 
       if (error) throw error;
@@ -174,7 +182,7 @@ export default function SubmissionForm() {
           </h2>
           <div>
             <label className="input-label flex items-center">
-              Figma File URL
+              DEMO File URL
               <ArrowTopRightOnSquareIcon className="w-4 h-4 ml-1 text-gray-400" />
             </label>
             <input
@@ -187,7 +195,7 @@ export default function SubmissionForm() {
                   message: "Please enter a valid Figma URL",
                 },
               })}
-              placeholder="https://figma.com/file/..."
+              placeholder="DEMO File URL"
             />
             {errors.figmaUrl && (
               <p className="error-message">{errors.figmaUrl.message}</p>
@@ -216,6 +224,27 @@ export default function SubmissionForm() {
               />
               {errors.bmcFile && (
                 <p className="error-message">{errors.bmcFile.message}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="input-label flex items-center">
+                Technical Documentation
+                <DocumentArrowUpIcon className="w-4 h-4 ml-1 text-gray-400" />
+              </label>
+              <input
+                type="file"
+                className="form-file"
+                accept=".pdf"
+                {...register("technicalFile", {
+                  required: "Technical documentation is required",
+                })}
+              />
+              <p className="text-sm text-gray-400 mt-1">
+                Upload your technical documentation in PDF format
+              </p>
+              {errors.technicalFile && (
+                <p className="error-message">{errors.technicalFile.message}</p>
               )}
             </div>
 
@@ -289,6 +318,37 @@ export default function SubmissionForm() {
                 </div>
               )}
             </div>
+          </div>
+        </div>
+
+        <div className="form-section">
+          <h2 className="form-section-title">
+            <span className="form-section-number">4</span>
+            Additional Resources
+          </h2>
+          <div>
+            <label className="input-label flex items-center">
+              Google Drive Link (Optional)
+              <LinkIcon className="w-4 h-4 ml-1 text-gray-400" />
+            </label>
+            <input
+              type="url"
+              className="form-input"
+              {...register("driveUrl", {
+                pattern: {
+                  value:
+                    /^https:\/\/(drive\.google\.com|docs\.google\.com)\/.*/,
+                  message: "Please enter a valid Google Drive URL",
+                },
+              })}
+              placeholder="https://drive.google.com/..."
+            />
+            <p className="text-sm text-gray-400 mt-1">
+              Share any additional files or resources via Google Drive
+            </p>
+            {errors.driveUrl && (
+              <p className="error-message">{errors.driveUrl.message}</p>
+            )}
           </div>
         </div>
 
