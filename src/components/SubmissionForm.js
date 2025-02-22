@@ -298,17 +298,19 @@ export default function SubmissionForm() {
                   <input
                     type="url"
                     className="form-input"
-                    placeholder="https://www.canva.com/design/..."
+                    placeholder="Enter your presentation link"
                     {...register("presentationUrl", {
                       required: "Presentation URL is required",
                       pattern: {
-                        value: /^https:\/\/([\w\.-]+\.)?canva\.com\/.*/,
-                        message: "Please enter a valid Canva URL",
+                        value: /^https?:\/\/.+/,
+                        message:
+                          "Please enter a valid URL starting with http:// or https://",
                       },
                     })}
                   />
                   <p className="text-sm text-gray-400 mt-1">
-                    Please share your Canva presentation with view access
+                    Share your presentation link (Google Slides, Canva, or any
+                    other platform)
                   </p>
                   {errors.presentationUrl && (
                     <p className="error-message">
