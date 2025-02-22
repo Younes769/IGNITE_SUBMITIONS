@@ -19,6 +19,7 @@ export default function SubmissionForm() {
   const [deadline, setDeadline] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isExpired, setIsExpired] = useState(false);
+  const [bmcType, setBmcType] = useState("file");
 
   const {
     register,
@@ -75,11 +76,14 @@ export default function SubmissionForm() {
     try {
       setIsSubmitting(true);
 
-      const bmcFilePath = await uploadFile(
-        data.bmcFile[0],
-        data.teamName,
-        "bmc"
-      );
+      let bmcFilePath = null;
+      let bmcUrl = null;
+
+      if (bmcType === "file" && data.bmcFile?.[0]) {
+        bmcFilePath = await uploadFile(data.bmcFile[0], data.teamName, "bmc");
+      } else if (bmcType === "url" && data.bmcUrl) {
+        bmcUrl = data.bmcUrl;
+      }
 
       const technicalFilePath = await uploadFile(
         data.technicalFile[0],
@@ -105,6 +109,7 @@ export default function SubmissionForm() {
         team_name: data.teamName,
         figma_url: data.figmaUrl,
         bmc_file: bmcFilePath,
+        bmc_url: bmcUrl,
         technical_file: technicalFilePath,
         presentation_file: presentationFile,
         presentation_url: presentationUrl,
@@ -214,16 +219,73 @@ export default function SubmissionForm() {
                 BMC File
                 <DocumentArrowUpIcon className="w-4 h-4 ml-1 text-gray-400" />
               </label>
-              <input
-                type="file"
-                className="form-file"
-                accept=".pdf,.doc,.docx"
-                {...register("bmcFile", {
-                  required: "BMC file is required",
-                })}
-              />
-              {errors.bmcFile && (
-                <p className="error-message">{errors.bmcFile.message}</p>
+
+              <div className="flex space-x-4 mb-4">
+                <button
+                  type="button"
+                  onClick={() => setBmcType("file")}
+                  className={`px-4 py-2 rounded-md flex items-center ${
+                    bmcType === "file"
+                      ? "bg-primary text-white"
+                      : "bg-gray-800 text-gray-300 hover:bg-gray-700"
+                  }`}
+                >
+                  <DocumentArrowUpIcon className="w-4 h-4 mr-2" />
+                  Upload File
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBmcType("url")}
+                  className={`px-4 py-2 rounded-md flex items-center ${
+                    bmcType === "url"
+                      ? "bg-primary text-white"
+                      : "bg-gray-800 text-gray-300 hover:bg-gray-700"
+                  }`}
+                >
+                  <LinkIcon className="w-4 h-4 mr-2" />
+                  Add URL
+                </button>
+              </div>
+
+              {bmcType === "file" ? (
+                <div>
+                  <input
+                    type="file"
+                    className="form-file"
+                    accept=".pdf,.doc,.docx"
+                    {...register("bmcFile", {
+                      required:
+                        bmcType === "file" ? "BMC file is required" : false,
+                    })}
+                  />
+                  {errors.bmcFile && (
+                    <p className="error-message">{errors.bmcFile.message}</p>
+                  )}
+                </div>
+              ) : (
+                <div>
+                  <input
+                    type="url"
+                    className="form-input"
+                    placeholder="Enter your BMC document link"
+                    {...register("bmcUrl", {
+                      required:
+                        bmcType === "url" ? "BMC URL is required" : false,
+                      pattern: {
+                        value: /^https?:\/\/.+/,
+                        message:
+                          "Please enter a valid URL starting with http:// or https://",
+                      },
+                    })}
+                  />
+                  <p className="text-sm text-gray-400 mt-1">
+                    Share your BMC document link (Google Docs, PDF, or any other
+                    platform)
+                  </p>
+                  {errors.bmcUrl && (
+                    <p className="error-message">{errors.bmcUrl.message}</p>
+                  )}
+                </div>
               )}
             </div>
 

@@ -333,13 +333,27 @@ export default function AdminDashboard() {
                         </a>
                       </td>
                       <td className="px-6 py-4">
-                        <button
-                          onClick={() => handleDownload(submission.bmc_file)}
-                          className="text-primary hover:text-primary-light inline-flex items-center"
-                        >
-                          Download BMC
-                          <DocumentArrowDownIcon className="w-4 h-4 ml-1" />
-                        </button>
+                        {submission.bmc_file ? (
+                          <button
+                            onClick={() => handleDownload(submission.bmc_file)}
+                            className="text-primary hover:text-primary-light inline-flex items-center"
+                          >
+                            Download BMC
+                            <DocumentArrowDownIcon className="w-4 h-4 ml-1" />
+                          </button>
+                        ) : submission.bmc_url ? (
+                          <a
+                            href={submission.bmc_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary hover:text-primary-light inline-flex items-center"
+                          >
+                            View BMC
+                            <ArrowTopRightOnSquareIcon className="w-4 h-4 ml-1" />
+                          </a>
+                        ) : (
+                          <span className="text-gray-500">Not provided</span>
+                        )}
                       </td>
                       <td className="px-6 py-4">
                         <button
