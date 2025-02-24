@@ -106,30 +106,50 @@ export default function AdminDashboard() {
   const handleDownload = async (filePath) => {
     const supabase = createClient();
     try {
-      const { data, error } = await supabase.storage
+      // First get the file data
+      const { data: fileData, error: downloadError } = await supabase.storage
         .from("submissions")
-        .createSignedUrl(filePath, 60); // URL valid for 60 seconds
+        .download(filePath);
 
-      if (error) throw error;
+      if (downloadError) throw downloadError;
+
+      // Create a blob from the file data
+      const blob = new Blob([fileData], {
+        type: getContentType(filePath),
+      });
+
+      // Create a URL for the blob
+      const url = window.URL.createObjectURL(blob);
 
       // Create a temporary anchor element
       const link = document.createElement("a");
-      link.href = data.signedUrl;
-      link.target = "_blank";
-      link.rel = "noopener noreferrer";
-
-      // Extract filename from path
-      const fileName = filePath.split("/").pop();
-      link.download = fileName;
+      link.href = url;
+      link.download = filePath.split("/").pop(); // Set the filename
 
       // Append to body, click, and remove
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+
+      // Clean up the URL
+      window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error("Download error:", error);
       toast.error("Error downloading file. Please try again.");
     }
+  };
+
+  // Helper function to determine content type
+  const getContentType = (filePath) => {
+    const extension = filePath.split(".").pop().toLowerCase();
+    const contentTypes = {
+      pdf: "application/pdf",
+      doc: "application/msword",
+      docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      ppt: "application/vnd.ms-powerpoint",
+      pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    };
+    return contentTypes[extension] || "application/octet-stream";
   };
 
   const handleDeadlineUpdate = (newDeadline) => {
